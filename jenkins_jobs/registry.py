@@ -35,12 +35,13 @@ logger = logging.getLogger(__name__)
 class ModuleRegistry(object):
     _entry_points_cache = {}
 
-    def __init__(self, jjb_config, plugins_list=None):
+    def __init__(self, jjb_config, parser, plugins_list=None):
         self.modules = []
         self.modules_by_component_type = {}
         self.handlers = {}
         self.jjb_config = jjb_config
         self.masked_warned = {}
+        self.parser = parser
 
         if plugins_list is None:
             self.plugins_dict = {}
@@ -156,11 +157,16 @@ class ModuleRegistry(object):
                                        "'{0}'.".format(component_type))
 
         entry_point = self.modules_by_component_type[component_type]
-        component_list_type = entry_point.load().component_list_type
+        mod = entry_point.load()
+        component_list_type = mod.component_list_type
 
         if isinstance(component, dict):
             # The component is a singleton dictionary of name: dict(args)
             name, component_data = next(iter(component.items()))
+
+            if isinstance(component_data, dict):
+                name = component_data.get((mod.component_type + '-type'), name)
+
             if template_data or isinstance(component_data, Jinja2Loader):
                 # Template data contains values that should be interpolated
                 # into the component definition.  To handle Jinja2 templates

@@ -102,7 +102,7 @@ class UpdateSubCommand(base.BaseSubCommand):
 
         # Generate XML
         parser = YamlParser(jjb_config)
-        registry = ModuleRegistry(jjb_config, builder.plugins_list)
+        registry = ModuleRegistry(jjb_config, parser, builder.plugins_list)
         xml_job_generator = XmlJobGenerator(registry)
         xml_view_generator = XmlViewGenerator(registry)
 

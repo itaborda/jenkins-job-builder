@@ -58,8 +58,8 @@ class DeleteSubCommand(base.BaseSubCommand):
                 '"--views-only" and "--jobs-only" cannot be used together.')
 
         fn = options.path
-        registry = ModuleRegistry(jjb_config, builder.plugins_list)
         parser = YamlParser(jjb_config)
+        registry = ModuleRegistry(jjb_config, parser, builder.plugins_list)
 
         if fn:
             parser.load_files(fn)

@@ -15,10 +15,13 @@
 
 # Manage Jenkins XML config file output.
 
+import logging
 import hashlib
 import pkg_resources
 from xml.dom import minidom
 import xml.etree.ElementTree as XML
+
+logger = logging.getLogger(__name__)
 
 from jenkins_jobs import errors
 
@@ -85,13 +88,15 @@ class XmlGenerator(object):
     def _getXMLForData(self, data):
         kind = data.get(self.kind_attribute, self.kind_default)
 
+        logging.debug("read module for {0} = {1}".format(self.kind_attribute, kind))
+
         for ep in pkg_resources.iter_entry_points(
                 group=self.entry_point_group, name=kind):
             Mod = ep.load()
             mod = Mod(self.registry)
             xml = mod.root_xml(data)
-            if "view-type" not in data:
-                self._gen_xml(xml, data)
+            #if "view-type" not in data:
+            self._gen_xml(xml, data)
             obj = XmlJob(xml, data['name'])
             return obj
 

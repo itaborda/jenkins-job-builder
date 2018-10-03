@@ -54,9 +54,9 @@ class ListSubCommand(base.BaseSubCommand):
 
     def get_jobs(self, jobs_glob=None, fn=None):
         if fn:
-            r = registry.ModuleRegistry(self.jjb_config,
-                                      self.jenkins.plugins_list)
             p = parser.YamlParser(self.jjb_config)
+            r = registry.ModuleRegistry(self.jjb_config, p,
+                                      self.jenkins.plugins_list)
             p.load_files(fn)
             p.expandYaml(r, jobs_glob)
             jobs = [j['name'] for j in p.jobs]

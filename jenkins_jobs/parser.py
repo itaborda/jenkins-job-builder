@@ -193,15 +193,29 @@ class YamlParser(object):
         return self._applyDefaults(job)
 
     def _applyDefaults(self, data, override_dict=None):
+
+        whichdefaults = data.get('defaults', 'global')
+
+        if isinstance(whichdefaults, list):
+            new_data = data
+            for whichdefault in whichdefaults:
+                new_data = self.__applyDefaults(new_data, whichdefault,
+                    override_dict)
+            return new_data
+        else:
+            return self.__applyDefaults(data, whichdefaults, override_dict)
+
+    def __applyDefaults(self, data, whichdefaults, override_dict=None):
         if override_dict is None:
             override_dict = {}
 
-        whichdefaults = data.get('defaults', 'global')
         defaults = copy.deepcopy(self.data.get('defaults',
                                  {}).get(whichdefaults, {}))
+
         if defaults == {} and whichdefaults != 'global':
             raise JenkinsJobsException("Unknown defaults set: '{0}'"
                                        .format(whichdefaults))
+
 
         for key in override_dict.keys():
             if key in defaults.keys():
@@ -369,17 +383,22 @@ class YamlParser(object):
                         if template:
                             self._expandYamlForTemplateView(
                                 d, template, jobs_glob)
+                        else:
+                            d['view-type'] = viewname
+                            self.views.append(d)
                     continue
                 # see if it's a template
+                d = type(project)(project)
+                d.update(viewparams)
                 template = self._getViewTemplate(viewname)
                 if template:
-                    d = type(project)(project)
-                    d.update(viewparams)
                     self._expandYamlForTemplateView(d, template, jobs_glob)
                 else:
-                    raise JenkinsJobsException("Failed to find suitable "
-                                               "template named '{0}'"
-                                               .format(viewname))
+                    d['view-type'] = viewname
+                    self.views.append(d)
+                    #raise JenkinsJobsException("Failed to find suitable "
+                    #                           "template named '{0}'"
+                    #                           .format(viewname))
 
         # check for duplicate generated jobs
         seen = set()
@@ -401,7 +420,7 @@ class YamlParser(object):
                 self.views.remove(view)
             seen_views.add(view['name'])
 
-        return self.jobs, self.views
+        return list(self.jobs), list(self.views)
 
     def _expandYamlForTemplateJob(self, project, template, jobs_glob=None):
         dimensions = []
@@ -508,6 +527,8 @@ class YamlParser(object):
     def _expandYamlForTemplateView(self, project, template, views_glob=None):
         dimensions = []
         template_name = template['name']
+
+        views_expandeds = []
         # reject keys that are not useful during yaml expansion
         for k in ['views']:
             project.pop(k)
@@ -557,3 +578,6 @@ class YamlParser(object):
 
             self._formatDescription(expanded)
             self.views.append(expanded)
+            views_expandeds.append(expanded)
+
+        return views_expandeds
